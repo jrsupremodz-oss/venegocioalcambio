@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Negocio al cambio</title>
+    
+    <!-- Configuración PWA Nativa (Pantalla Completa sin barra de navegador) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Negocio al Cambio">
+    <meta name="theme-color" content="#111827">
+    
+    <!-- Icono SVG -->
+    <link rel="icon" id="appIcon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>">
+
+    <!-- Web App Manifest embebido dinámicamente -->
+    <script>
+        (function() {
+            const manifest = {
+                "name": "Negocio al cambio",
+                "short_name": "NegocioCambio",
+                "description": "Calculadora Comercial y Cotizaciones de Divisas",
+                "start_url": "./",
+                "display": "standalone",
+                "orientation": "portrait",
+                "background_color": "#111827",
+                "theme_color": "#111827",
+                "icons": [
+                    {
+                        "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>",
+                        "sizes": "192x192 512x512",
+                        "type": "image/svg+xml",
+                        "purpose": "any maskable"
+                    }
+                ]
+            };
+            const stringManifest = JSON.stringify(manifest);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestUrl;
+            document.head.appendChild(link);
+        })();
+    </script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brandYellow: '#EAB308',
+                        brandBlue: '#2563EB',
+                        brandRed: '#DC2626'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body.font-small { font-size: 13px; }
+        body.font-medium { font-size: 16px; }
+        body.font-large { font-size: 20px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #4B5563; border-radius: 10px; }
+        .hidden { display: none !important; }
+        
+        /* Ocultar elementos de instalación si la app ya está corriendo como PWA */
+        @media standalone {
+            .pwa-only-banner, .pwa-only-menu { display: none !important; }
+        }
+        @media (display-mode: standalone) {
+            .pwa-only-banner, .pwa-only-menu { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-large min-h-screen flex flex-col transition-colors duration-300 select-none" onclick="closeAllDropdowns(event)">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <!-- Logotipo Estilizado -->
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('productos')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brandYellow to-brandBlue flex items-center justify-center shadow-md border border-brandRed flex-shrink-0">
+                    <span class="text-white font-black text-xl">$</span>
+                </div>
+                <h1 class="text-lg md:text-xl font-extrabold tracking-tight whitespace-nowrap">
+                    <span class="text-brandYellow">Negocio</span><span class="text-brandBlue">al</span><span class="text-brandRed">cambio</span>
+                </h1>
+            </div>
+
+            <!-- Menú de Tres Puntos Desplegable -->
+            <div class="relative">
+                <button type="button" onclick="toggleMenu(event)" class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center gap-1 z-50">
+                    <i class="fa-solid fa-ellipsis-vertical text-brandYellow text-xl px-1 pointer-events-none"></i>
+                </button>
+
+                <!-- Contenido del Desplegable -->
+                <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 z-50">
+                    <button type="button" onclick="switchTab('productos'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
+                        <i class="fa-solid fa-boxes-stacked text-brandBlue"></i> Inicio / Productos
+                    </button>
+                    <button type="button" onclick="switchTab('calculadora'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
+                        <i class="fa-solid fa-calculator text-brandRed"></i> Calculadora Comercial
+                    </button>
+                    <button type="button" onclick="toggleModal('tasasModal'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
+                        <i class="fa-solid fa-coins text-brandYellow"></i> Tasas Oficiales
+                    </button>
+                    <button type="button" onclick="toggleModal('pagoModal'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
+                        <i class="fa-solid fa-mobile-screen-button text-green-500"></i> Perfiles de Pago Móvil
+                    </button>
+                    <button type="button" id="menuInstallBtn" onclick="triggerInstallFlow(); closeMenu()" class="pwa-only-menu w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-bold text-brandYellow">
+                        <i class="fa-solid fa-download"></i> Instalar Aplicación
+                    </button>
+                    <div class="border-t my-1 dark:border-gray-700"></div>
+                    <button type="button" onclick="toggleModal('configModal'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
+                        <i class="fa-solid fa-gear text-gray-400"></i> Configuración
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 pb-20">
+
+        <!-- Reloj, Fecha e Indicador Offline -->
+        <div class="flex justify-between items-center mb-2 px-1">
+            <div id="offlineIndicator" class="hidden bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-wifi"></i> Modo Sin Internet
+            </div>
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 ml-auto">
+                <i class="fa-regular fa-clock text-brandYellow"></i>
+                <span id="liveClock" class="font-mono font-bold">00:00</span>
+                <span class="text-gray-400">|</span>
+                <span id="liveDate">Cargando...</span>
+            </div>
+        </div>
+
+        <!-- Banner Sutil de Instalación PWA (Muy compacto) -->
+        <div id="topInstallBanner" class="pwa-only-banner bg-gray-800/90 text-white rounded-xl px-3 py-2 shadow border border-gray-700 mb-3 flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <i class="fa-solid fa-mobile-screen text-brandYellow text-base flex-shrink-0"></i>
+                <span class="truncate text-gray-200">Instala la App en tu pantalla de inicio</span>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button onclick="triggerInstallFlow()" class="bg-brandYellow hover:bg-yellow-500 text-gray-900 font-extrabold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                    <i class="fa-solid fa-download"></i> Instalar
+                </button>
+                <button onclick="dismissBanner()" class="text-gray-400 hover:text-white px-1.5 py-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <!-- Banner Principal de Tasas -->
+        <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-2xl p-5 shadow-xl mb-6 border border-blue-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="w-12 h-12 rounded-xl bg-brandYellow/10 border border-brandYellow/30 flex items-center justify-center text-brandYellow text-2xl flex-shrink-0">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="currentRateTitle" class="text-xs uppercase tracking-wider text-blue-300 font-bold">Dólar Oficial (BCV)</span>
+                        <span id="rateTrendBadge" class="text-[10px] bg-green-500/20 text-green-400 font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> Actualizado
+                        </span>
+                    </div>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <strong id="mainDisplayRate" class="text-brandYellow text-3xl md:text-4xl font-black tracking-tight">--.--</strong> 
+                        <span class="text-sm text-blue-200 font-medium">Bolívares</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="fetchRates()" class="w-full md:w-auto text-xs bg-white/10 hover:bg-white/20 active:scale-95 px-4 py-2.5 rounded-xl transition border border-white/20 flex items-center justify-center gap-2 font-semibold">
+                <i class="fa-solid fa-sync"></i> Refrescar
+            </button>
+        </div>
+
+        <!-- SECCIÓN 1: PRODUCTOS Y CONVERSOR -->
+        <section id="seccion-productos" class="space-y-6">
+            
+            <!-- Conversor Rápido -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b pb-3 dark:border-gray-700">
+                    <h2 class="text-lg font-bold flex items-center gap-2 text-brandYellow">
+                        <i class="fa-solid fa-right-left"></i> Conversor Rápido
+                    </h2>
+                    
+                    <!-- Selector de Moneda -->
+                    <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl w-full md:w-auto overflow-x-auto gap-1">
+                        <button type="button" onclick="setRateMode(0)" id="modeBtn0" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition bg-brandBlue text-white shadow">Dólar BCV</button>
+                        <button type="button" onclick="setRateMode(1)" id="modeBtn1" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-500 hover:text-gray-900 dark:hover:text-white">Euro</button>
+                        <button type="button" onclick="setRateMode(2)" id="modeBtn2" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-500 hover:text-gray-900 dark:hover:text-white">USDT</button>
+                        <button type="button" onclick="setRateMode(3)" id="modeBtn3" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-500 hover:text-gray-900 dark:hover:text-white">Promedio</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                    <div>
+                        <label id="labelDivisaUnit" class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-200">Monto en Dólares ($)</label>
+                        <div class="flex gap-2.5">
+                            <div class="relative flex-grow">
+                                <span id="symbolInputPrefix" class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500 dark:text-gray-300 font-bold">$</span>
+                                <input type="number" step="0.01" id="convertUSD" value="1" oninput="convertFromUSD()" class="w-full pl-9 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-brandYellow focus:outline-none font-extrabold text-lg tracking-wide text-gray-900 dark:text-white">
+                            </div>
+                            <button type="button" onclick="copyToClipboard(document.getElementById('convertUSD').value, 'Monto copiado')" class="px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition text-brandBlue flex items-center justify-center">
+                                <i class="fa-solid fa-copy text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-200">Monto en Bolívares</label>
+                        <div class="flex gap-2.5">
+                            <div class="relative flex-grow">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500 dark:text-gray-300 font-bold text-xs">Bs</span>
+                                <input type="number" step="0.01" id="convertVES" placeholder="0.00" oninput="convertFromVES()" class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-brandYellow focus:outline-none font-extrabold text-lg tracking-wide text-gray-900 dark:text-white">
+                            </div>
+                            <button type="button" onclick="copyToClipboard(document.getElementById('convertVES').value, 'Bolívares copiados')" class="px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition text-brandYellow flex items-center justify-center">
+                                <i class="fa-solid fa-copy text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta Agregar Producto -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-brandBlue">
+                    <i class="fa-solid fa-box-open"></i> <span id="formTitle">Agregar Nuevo Producto</span>
+                </h2>
+                <form id="productForm" onsubmit="saveProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <input type="hidden" id="editIndex" value="-1">
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium mb-1.5">Nombre Producto</label>
+                        <input type="text" id="prodName" required placeholder="Ej. Manzanas" class="w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brandBlue font-medium">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium mb-1.5">Precio Base</label>
+                        <input type="number" step="0.01" id="prodPriceUSD" required placeholder="0.00" oninput="calculateVesPreview()" class="w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brandBlue font-extrabold text-lg">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium mb-1.5">Tasa a Aplicar</label>
+                        <select id="prodRateType" onchange="calculateVesPreview()" class="w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brandBlue font-semibold text-sm">
+                            <option value="0">Dólar BCV</option>
+                            <option value="1">Euro Oficial</option>
+                            <option value="2">USDT (Paralelo)</option>
+                            <option value="3">Promedio General</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end md:col-span-1 mt-2 sm:mt-0">
+                        <button type="submit" class="w-full bg-brandBlue hover:bg-blue-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-4 text-sm text-gray-500 dark:text-gray-400 flex justify-between bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <span>Estimado a cobrar:</span>
+                    <span id="previewVES" class="font-bold text-brandYellow text-base">0.00 Bolívares</span>
+                </div>
+            </div>
+
+            <!-- Listado de Productos -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="relative w-full sm:w-96">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400"><i class="fa-solid fa-search"></i></span>
+                        <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Buscar producto guardado..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brandYellow">
+                    </div>
+                    <span id="productCount" class="text-sm text-gray-500 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">0 registrados</span>
+                </div>
+
+                <!-- Lista Inyectada -->
+                <div id="productList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Javascript inserta aquí -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: CALCULADORA COMERCIAL -->
+        <section id="seccion-calculadora" class="hidden space-y-4">
+            <div class="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-bold text-brandRed flex items-center gap-2"><i class="fa-solid fa-calculator"></i> Calculadora Comercial</h2>
+                <button type="button" onclick="switchTab('productos')" class="bg-brandBlue text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Negocio
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md max-w-md mx-auto border border-gray-200 dark:border-gray-700">
+                <div class="bg-gray-900 p-4 rounded-xl mb-4 shadow-inner text-right">
+                    <div id="calcExpression" class="text-gray-400 text-sm font-mono min-h-[20px] overflow-x-auto">0</div>
+                    <div id="calcDisplay" class="text-green-400 text-3xl font-mono font-bold overflow-x-auto mt-1">0</div>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-2">
+                    <button type="button" onclick="calcClear()" class="bg-red-500 hover:bg-red-600 text-white p-4 rounded-xl font-bold transition">C</button>
+                    <button type="button" onclick="calcBackspace()" class="bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-xl font-bold transition" title="Borrar"><i class="fa-solid fa-delete-left"></i></button>
+                    <button type="button" onclick="calcAppend('%')" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-xl font-bold transition">%</button>
+                    <button type="button" onclick="calcAppend('/')" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-xl font-bold transition">÷</button>
+                    
+                    <button type="button" onclick="calcAppend('7')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">7</button>
+                    <button type="button" onclick="calcAppend('8')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">8</button>
+                    <button type="button" onclick="calcAppend('9')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">9</button>
+                    <button type="button" onclick="calcAppend('*')" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-xl font-bold transition">×</button>
+                    
+                    <button type="button" onclick="calcAppend('4')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">4</button>
+                    <button type="button" onclick="calcAppend('5')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">5</button>
+                    <button type="button" onclick="calcAppend('6')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">6</button>
+                    <button type="button" onclick="calcAppend('-')" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-xl font-bold transition">-</button>
+                    
+                    <button type="button" onclick="calcAppend('1')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">1</button>
+                    <button type="button" onclick="calcAppend('2')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">2</button>
+                    <button type="button" onclick="calcAppend('3')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">3</button>
+                    <button type="button" onclick="calcAppend('+')" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-xl font-bold transition">+</button>
+                    
+                    <button type="button" onclick="calcAppend('0')" class="col-span-2 bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">0</button>
+                    <button type="button" onclick="calcAppend('.')" class="bg-gray-100 dark:bg-gray-600 p-4 rounded-xl font-bold transition">.</button>
+                    <button type="button" onclick="calcCalculate()" class="bg-brandYellow hover:bg-yellow-600 text-gray-900 p-4 rounded-xl font-bold transition flex items-center justify-center">=</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL TASAS OFICIALES -->
+    <div id="tasasModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-coins text-brandYellow"></i> Referencias del Día</h3>
+                <button type="button" onclick="toggleModal('tasasModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl flex justify-between items-center border border-gray-200 dark:border-gray-700">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 block font-medium">Dólar BCV</span>
+                        <span id="fixedBCV" class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">--.-- Bs</span>
+                    </div>
+                    <span class="text-xs bg-brandBlue/10 text-brandBlue font-bold px-2 py-1 rounded">Oficial</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl flex justify-between items-center border border-gray-200 dark:border-gray-700">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 block font-medium">Euro Oficial</span>
+                        <span id="fixedEUR" class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">--.-- Bs</span>
+                    </div>
+                    <span class="text-xs bg-brandBlue/10 text-brandBlue font-bold px-2 py-1 rounded">Oficial</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl flex justify-between items-center border border-gray-200 dark:border-gray-700">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 block font-medium">USDT / Paralelo</span>
+                        <span id="fixedUSDT" class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">--.-- Bs</span>
+                    </div>
+                    <span class="text-xs bg-green-500/10 text-green-500 font-bold px-2 py-1 rounded">Mercado</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl flex justify-between items-center border border-gray-200 dark:border-gray-700">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 block font-medium">Promedio General</span>
+                        <span id="fixedPromedio" class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">--.-- Bs</span>
+                    </div>
+                    <span class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold px-2 py-1 rounded">Mixto</span>
+                </div>
+            </div>
+
+            <button type="button" onclick="toggleModal('tasasModal')" class="w-full bg-brandBlue hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition mt-2">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- MODAL PERFILES PAGO MÓVIL -->
+    <div id="pagoModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-mobile-screen-button text-green-500"></i> Mis Perfiles de Pago</h3>
+                <button type="button" onclick="toggleModal('pagoModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <form onsubmit="addPaymentProfile(event)" class="space-y-3 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-brandYellow">Agregar Nuevo</h4>
+                <div>
+                    <input type="text" id="newBank" required placeholder="Banco (Ej. Banesco)" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="newPhone" required placeholder="Teléfono" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                    <input type="text" id="newId" required placeholder="Cédula/RIF" class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                </div>
+                <button type="submit" class="w-full bg-brandBlue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-save"></i> Guardar Perfil
+                </button>
+            </form>
+
+            <div class="space-y-2 pt-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Guardados</h4>
+                <div id="paymentProfilesList" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INSTRUCCIONES INSTALACIÓN PWA -->
+    <div id="instructionsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-brandBlue flex items-center gap-2"><i class="fa-solid fa-download"></i> Instalar Aplicación</h3>
+                <button type="button" onclick="toggleModal('instructionsModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <strong class="text-brandYellow flex items-center gap-1.5 mb-1"><i class="fa-brands fa-android"></i> Desde tu Navegador Android</strong>
+                    <ol class="list-decimal pl-5 space-y-1 text-xs">
+                        <li>Presiona los tres puntos (⋮) arriba en la derecha del navegador.</li>
+                        <li>Selecciona <strong>"Agregar a la pantalla principal"</strong> o <strong>"Instalar aplicación"</strong>.</li>
+                        <li>¡Listo! Se abrirá como una App nativa a pantalla completa.</li>
+                    </ol>
+                </div>
+            </div>
+            <button type="button" onclick="toggleModal('instructionsModal')" class="w-full bg-brandBlue text-white font-semibold py-3 rounded-xl transition">Entendido</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURACIÓN -->
+    <div id="configModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-5">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-brandRed flex items-center gap-2"><i class="fa-solid fa-gear"></i> Configuración</h3>
+                <button type="button" onclick="toggleModal('configModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <span class="font-medium">Modo Oscuro</span>
+                <button type="button" onclick="toggleDarkMode()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-xl font-semibold transition hover:bg-gray-300 dark:hover:bg-gray-600">
+                    <i class="fa-solid fa-moon"></i> Cambiar
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <span class="font-medium block">Tamaño de Tipografía</span>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btnSmall" onclick="setFontSize('small')" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm border border-gray-300 dark:border-gray-600">Pequeña</button>
+                    <button type="button" id="btnMedium" onclick="setFontSize('medium')" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-base border border-gray-300 dark:border-gray-600">Mediana</button>
+                    <button type="button" id="btnLarge" onclick="setFontSize('large')" class="p-2 bg-brandBlue text-white rounded-lg text-lg font-bold border-brandBlue shadow">Grande</button>
+                </div>
+            </div>
+
+            <!-- Sección de Copia de Seguridad -->
+            <div class="space-y-2 pt-3 border-t dark:border-gray-700">
+                <span class="font-medium block">Copia de Seguridad</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="exportBackup()" class="p-2.5 bg-brandBlue text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition flex items-center justify-center gap-1.5 shadow">
+                        <i class="fa-solid fa-download"></i> Crear Copia
+                    </button>
+                    <button type="button" onclick="document.getElementById('importBackupInput').click()" class="p-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-xl text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center justify-center gap-1.5 border border-gray-300 dark:border-gray-600">
+                        <i class="fa-solid fa-upload"></i> Restaurar Copia
+                    </button>
+                    <input type="file" id="importBackupInput" accept=".json" onchange="importBackup(event)" class="hidden">
+                </div>
+            </div>
+
+            <button type="button" onclick="toggleModal('configModal')" class="w-full bg-gray-200 dark:bg-gray-700 py-3 rounded-xl font-semibold transition hover:bg-gray-300 dark:hover:bg-gray-600">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE ACTIVACIÓN INICIAL -->
+    <div id="activationModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000] hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-brandBlue space-y-4 text-center overflow-y-auto max-h-screen">
+            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-brandBlue rounded-full flex items-center justify-center mx-auto text-3xl mb-2">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-900 dark:text-white">Bienvenido a Negocio al Cambio</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+                Para comenzar a utilizar todas las herramientas de la aplicación, por favor ingrese su código de activación.
+            </p>
+
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col gap-3">
+                    <input type="text" id="unlockKeyInput" placeholder="Clave de Acceso" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brandYellow font-mono text-center uppercase tracking-widest font-bold">
+                    <button onclick="verifyUnlock()" class="w-full bg-brandYellow hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-xl transition shadow">Activar Aplicación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toast" class="fixed bottom-20 sm:bottom-5 right-5 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-[1100] flex items-center gap-2 border border-gray-700">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toastMsg" class="font-medium">Acción realizada</span>
+    </div>
+
+    <!-- REGISTRO DINÁMICO DE SERVICE WORKER -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'negocio-cambio-v2';
+                    const urlsToCache = [
+                        './',
+                        'https://cdn.tailwindcss.com',
+                        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+                    ];
+
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+                        );
+                        self.skipWaiting();
+                    });
+
+                    self.addEventListener('activate', event => {
+                        event.waitUntil(
+                            caches.keys().then(keys => Promise.all(
+                                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+                            ))
+                        );
+                        self.clients.claim();
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request).then(response => {
+                                return response || fetch(event.request).catch(() => caches.match('./'));
+                            })
+                        );
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).then(() => {
+                    console.log('Service Worker PWA Registrado');
+                }).catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const indicator = document.getElementById('offlineIndicator');
+            if (navigator.onLine) {
+                if (indicator) indicator.classList.add('hidden');
+            } else {
+                if (indicator) indicator.classList.remove('hidden');
+            }
+        }
+    </script>
+
+    <!-- JAVASCRIPT SEGURO Y PWA CONTROLS -->
+    <script>
+        // --- CLAVE DE ACTIVACIÓN ---
+        const ACTIVATION_KEY = "EXITO2026";
+
+        // --- VARIABLES Y ESTADO INICIAL ---
+        let currentRateUSD = parseFloat(localStorage.getItem('cached_bcv')) || 75.50;
+        let currentRateEUR = parseFloat(localStorage.getItem('cached_eur')) || 82.20;
+        let currentRateUSDT = parseFloat(localStorage.getItem('cached_usdt')) || 85.00;
+        let currentRateType = 0; // 0: BCV, 1: EUR, 2: USDT, 3: Promedio
+        
+        let products = JSON.parse(localStorage.getItem('negocio_productos')) || [];
+        let paymentProfiles = JSON.parse(localStorage.getItem('negocio_perfiles_pago')) || [];
+        let currentFontSize = localStorage.getItem('negocio_font') || 'large';
+
+        // --- COMPROBAR SI LA APLICACIÓN YA ESTÁ INSTALADA / PWA ---
+        function isRunningStandalone() {
+            return (window.matchMedia('(display-mode: standalone)').matches) || 
+                   (window.navigator.standalone) || 
+                   document.referrer.includes('android-app://');
+        }
+
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Solo mostrar banner si NO se está ejecutando ya como PWA instalada y si el usuario no cerró el banner
+            if (!isRunningStandalone() && localStorage.getItem('app_dismiss_install_banner') !== 'true') {
+                const banner = document.getElementById('topInstallBanner');
+                if (banner) banner.classList.remove('hidden');
+            }
+        });
+
+        function dismissBanner() {
+            const banner = document.getElementById('topInstallBanner');
+            if (banner) banner.classList.add('hidden');
+            localStorage.setItem('app_dismiss_install_banner', 'true');
+        }
+
+        function triggerInstallFlow() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        dismissBanner();
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                toggleModal('instructionsModal');
+            }
+        }
+
+        // Ocultar botones de instalación automáticamente si ya arrancó como app PWA
+        window.addEventListener('DOMContentLoaded', () => {
+            if (isRunningStandalone()) {
+                const banner = document.getElementById('topInstallBanner');
+                const menuBtn = document.getElementById('menuInstallBtn');
+                if (banner) banner.classList.add('hidden');
+                if (menuBtn) menuBtn.classList.add('hidden');
+            }
+        });
+
+        // --- SISTEMA DE ACTIVACIÓN INICIAL ---
+        function checkActivation() {
+            if(localStorage.getItem('app_is_pro') === 'true') return;
+
+            // Mostrar el modal de activación inmediatamente si no está activado
+            document.getElementById('activationModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function verifyUnlock() {
+            const input = document.getElementById('unlockKeyInput').value.trim().toUpperCase();
+            if(input === ACTIVATION_KEY) {
+                localStorage.setItem('app_is_pro', 'true');
+                document.getElementById('activationModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                showToast('¡Aplicación activada con éxito!');
+            } else {
+                alert('Clave incorrecta. Por favor intente de nuevo.');
+            }
+        }
+
+        // --- INICAR APP ---
+        window.onload = function() {
+            applyFontSize(currentFontSize);
+            setInterval(updateClock, 1000);
+            updateClock();
+            
+            updateMainRateDisplay();
+            renderProducts();
+            renderPaymentProfiles();
+            updateOnlineStatus();
+            
+            // Validar la activación al iniciar
+            checkActivation();
+
+            setTimeout(fetchRates, 500); 
+        }
+
+        // --- UI & MENÚS ---
+        function toggleMenu(event) {
+            event.stopPropagation();
+            document.getElementById('dropdownMenu').classList.toggle('hidden');
+        }
+
+        function closeMenu() {
+            document.getElementById('dropdownMenu').classList.add('hidden');
+        }
+
+        function closeAllDropdowns(event) {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu && !menu.classList.contains('hidden') && !event.target.closest('.relative')) {
+                menu.classList.add('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            const secProd = document.getElementById('seccion-productos');
+            const secCalc = document.getElementById('seccion-calculadora');
+            if(tab === 'productos') {
+                secProd.classList.remove('hidden');
+                secCalc.classList.add('hidden');
+            } else {
+                secProd.classList.add('hidden');
+                secCalc.classList.remove('hidden');
+            }
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if(modal) modal.classList.toggle('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2500);
+        }
+
+        function updateClock() {
+            try {
+                const now = new Date();
+                const optionsTime = { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const optionsDate = { timeZone: 'America/Caracas', weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+                document.getElementById('liveClock').innerText = now.toLocaleTimeString('es-VE', optionsTime);
+                document.getElementById('liveDate').innerText = now.toLocaleDateString('es-VE', optionsDate);
+            } catch (e) {}
+        }
+
+        // --- ACTUALIZACIÓN DE TASAS ---
+        async function fetchRates() {
+            if(!navigator.onLine) {
+                showToast('Modo sin conexión: usando tasas guardadas');
+                return;
+            }
+
+            const btnSync = document.querySelector('button[onclick="fetchRates()"]');
+            if(btnSync) btnSync.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+
+            try {
+                const proxyUrl = "https://api.allorigins.win/get?url=";
+                
+                let dataUSD = null;
+                try {
+                    const res = await fetch('https://ve.dolarapi.com/v1/dolares');
+                    if(res.ok) dataUSD = await res.json();
+                } catch(e) {
+                    const res = await fetch(proxyUrl + encodeURIComponent('https://ve.dolarapi.com/v1/dolares'));
+                    const pData = await res.json();
+                    dataUSD = JSON.parse(pData.contents);
+                }
+
+                if(dataUSD && Array.isArray(dataUSD)) {
+                    const bcv = dataUSD.find(i => i.fuente === 'oficial' || i.nombre === 'Oficial');
+                    const usdt = dataUSD.find(i => i.fuente === 'paralelo' || i.nombre === 'Paralelo');
+                    if(bcv && bcv.promedio) {
+                        currentRateUSD = parseFloat(bcv.promedio);
+                        localStorage.setItem('cached_bcv', currentRateUSD);
+                    }
+                    if(usdt && usdt.promedio) {
+                        currentRateUSDT = parseFloat(usdt.promedio);
+                        localStorage.setItem('cached_usdt', currentRateUSDT);
+                    }
+                }
+
+                let dataEUR = null;
+                try {
+                    const resE = await fetch('https://ve.dolarapi.com/v1/euros');
+                    if(resE.ok) dataEUR = await resE.json();
+                } catch(e) {
+                    const resE = await fetch(proxyUrl + encodeURIComponent('https://ve.dolarapi.com/v1/euros'));
+                    const pDataE = await resE.json();
+                    dataEUR = JSON.parse(pDataE.contents);
+                }
+
+                if(dataEUR && Array.isArray(dataEUR)) {
+                    const eur = dataEUR.find(i => i.fuente === 'oficial' || i.nombre === 'Oficial');
+                    if(eur && eur.promedio) {
+                        currentRateEUR = parseFloat(eur.promedio);
+                        localStorage.setItem('cached_eur', currentRateEUR);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error cargando API, manteniendo caché.");
+            } finally {
+                updateMainRateDisplay();
+                renderProducts();
+                if(btnSync) btnSync.innerHTML = '<i class="fa-solid fa-sync"></i> Refrescar';
+            }
+        }
+
+        function setRateMode(mode) {
+            currentRateType = mode;
+            updateMainRateDisplay();
+        }
+
+        function getActiveRate() {
+            if(currentRateType === 0) return currentRateUSD;
+            if(currentRateType === 1) return currentRateEUR;
+            if(currentRateType === 2) return currentRateUSDT;
+            return (currentRateUSD + currentRateEUR + currentRateUSDT) / 3;
+        }
+
+        function getSpecificRate(typeIndex) {
+            if(typeIndex === 1) return currentRateEUR;
+            if(typeIndex === 2) return currentRateUSDT;
+            if(typeIndex === 3) return (currentRateUSD + currentRateEUR + currentRateUSDT) / 3;
+            return currentRateUSD;
+        }
+
+        function updateMainRateDisplay() {
+            const prom = (currentRateUSD + currentRateEUR + currentRateUSDT) / 3;
+
+            if(document.getElementById('fixedBCV')) document.getElementById('fixedBCV').innerText = currentRateUSD.toFixed(2) + ' Bs';
+            if(document.getElementById('fixedEUR')) document.getElementById('fixedEUR').innerText = currentRateEUR.toFixed(2) + ' Bs';
+            if(document.getElementById('fixedUSDT')) document.getElementById('fixedUSDT').innerText = currentRateUSDT.toFixed(2) + ' Bs';
+            if(document.getElementById('fixedPromedio')) document.getElementById('fixedPromedio').innerText = prom.toFixed(2) + ' Bs';
+
+            for(let i=0; i<4; i++) {
+                const btn = document.getElementById('modeBtn'+i);
+                if(btn) {
+                    if(i === currentRateType) {
+                        btn.className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition bg-brandBlue text-white shadow";
+                    } else {
+                        btn.className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-500 hover:text-gray-900 dark:hover:text-white bg-transparent";
+                    }
+                }
+            }
+
+            const titleEl = document.getElementById('currentRateTitle');
+            const displayEl = document.getElementById('mainDisplayRate');
+            const unitLabel = document.getElementById('labelDivisaUnit');
+            const prefixEl = document.getElementById('symbolInputPrefix');
+
+            if(currentRateType === 0) {
+                if(titleEl) titleEl.innerText = "Dólar Oficial (BCV)";
+                if(displayEl) displayEl.innerText = currentRateUSD.toFixed(2);
+                if(unitLabel) unitLabel.innerText = "Monto en Dólares ($)";
+                if(prefixEl) prefixEl.innerText = "$";
+            } else if(currentRateType === 1) {
+                if(titleEl) titleEl.innerText = "Euro Oficial (BCV)";
+                if(displayEl) displayEl.innerText = currentRateEUR.toFixed(2);
+                if(unitLabel) unitLabel.innerText = "Monto en Euros (€)";
+                if(prefixEl) prefixEl.innerText = "€";
+            } else if(currentRateType === 2) {
+                if(titleEl) titleEl.innerText = "Tasa USDT / Paralelo";
+                if(displayEl) displayEl.innerText = currentRateUSDT.toFixed(2);
+                if(unitLabel) unitLabel.innerText = "Monto en USDT";
+                if(prefixEl) prefixEl.innerText = "₮";
+            } else {
+                if(titleEl) titleEl.innerText = "Promedio General";
+                if(displayEl) displayEl.innerText = prom.toFixed(2);
+                if(unitLabel) unitLabel.innerText = "Monto Equivalente";
+                if(prefixEl) prefixEl.innerText = "≈";
+            }
+            
+            convertFromUSD();
+        }
+
+        // --- CONVERSOR ---
+        function convertFromUSD() {
+            const input = document.getElementById('convertUSD');
+            const output = document.getElementById('convertVES');
+            if(!input || !output) return;
+
+            const rate = getActiveRate();
+            const val = parseFloat(input.value) || 0;
+            const ves = val * rate;
+            output.value = val > 0 ? ves.toFixed(2) : '';
+        }
+
+        function convertFromVES() {
+            const input = document.getElementById('convertVES');
+            const output = document.getElementById('convertUSD');
+            if(!input || !output) return;
+
+            const rate = getActiveRate();
+            const ves = parseFloat(input.value) || 0;
+            const val = ves / rate;
+            output.value = ves > 0 ? val.toFixed(2) : '';
+        }
+
+        // --- PRODUCTOS ---
+        function calculateVesPreview() {
+            const input = document.getElementById('prodPriceUSD');
+            const select = document.getElementById('prodRateType');
+            const preview = document.getElementById('previewVES');
+            if(!input || !select || !preview) return;
+
+            const rateType = parseInt(select.value) || 0;
+            const rate = getSpecificRate(rateType);
+            const price = parseFloat(input.value) || 0;
+            const totalVES = price * rate;
+            preview.innerText = totalVES.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' Bolívares';
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('prodName');
+            const priceInput = document.getElementById('prodPriceUSD');
+            const typeInput = document.getElementById('prodRateType');
+            const editInput = document.getElementById('editIndex');
+
+            if(!nameInput || !priceInput) return;
+
+            const name = nameInput.value;
+            const priceUSD = parseFloat(priceInput.value) || 0;
+            const rateType = parseInt(typeInput.value) || 0;
+            const editIndex = parseInt(editInput.value);
+
+            if(editIndex === -1) {
+                products.push({ id: Date.now(), name, priceUSD, rateType });
+            } else {
+                if(products[editIndex]) {
+                    products[editIndex].name = name;
+                    products[editIndex].priceUSD = priceUSD;
+                    products[editIndex].rateType = rateType;
+                }
+                editInput.value = -1;
+                document.getElementById('formTitle').innerText = "Agregar Nuevo Producto";
+            }
+
+            localStorage.setItem('negocio_productos', JSON.stringify(products));
+            document.getElementById('productForm').reset();
+            calculateVesPreview();
+            renderProducts();
+            showToast('Producto guardado');
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productList');
+            const searchInput = document.getElementById('searchInput');
+            if(!container) return;
+
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            container.innerHTML = '';
+
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            if(document.getElementById('productCount')) {
+                document.getElementById('productCount').innerText = `${filtered.length} registrados`;
+            }
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-10 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                        <i class="fa-solid fa-basket-shopping text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-500">No hay productos aquí.</p>
+                    </div>`;
+                return;
+            }
+
+            filtered.forEach((prod) => {
+                const rType = prod.rateType !== undefined ? prod.rateType : 0;
+                const rate = getSpecificRate(rType);
+                const totalVES = prod.priceUSD * rate;
+                
+                let rateLabel = "Dólar BCV"; let rateSymbol = "$";
+                if(rType === 1) { rateLabel = "Euro Oficial"; rateSymbol = "€"; }
+                else if(rType === 2) { rateLabel = "USDT"; rateSymbol = "₮"; }
+                else if(rType === 3) { rateLabel = "Promedio"; rateSymbol = "≈"; }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg text-brandBlue">${escapeHtml(prod.name)}</h3>
+                                <span class="text-[10px] bg-blue-500/10 text-blue-500 font-semibold px-2 py-0.5 rounded-full">Base: ${rateLabel}</span>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="editProduct(${products.indexOf(prod)})" class="p-2 text-gray-400 hover:text-brandYellow transition"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteProduct(${products.indexOf(prod)})" class="p-2 text-gray-400 hover:text-brandRed transition"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 my-2 bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <div>
+                                <span class="text-xs text-gray-400 block">Precio Divisa</span>
+                                <span class="font-bold text-lg text-green-500">${rateSymbol}${prod.priceUSD.toFixed(2)}</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-400 block">Bolívares Hoy</span>
+                                <span class="font-bold text-lg text-brandYellow">${totalVES.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="copyProductDetails('${escapeHtml(prod.name)}', ${prod.priceUSD}, ${totalVES}, '${rateLabel}', '${rateSymbol}')" class="w-full mt-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-2 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200">
+                        <i class="fa-solid fa-share-nodes text-brandBlue"></i> Compartir
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function editProduct(index) {
+            const p = products[index];
+            if(!p) return;
+            document.getElementById('prodName').value = p.name;
+            document.getElementById('prodPriceUSD').value = p.priceUSD;
+            document.getElementById('prodRateType').value = p.rateType !== undefined ? p.rateType : 0;
+            document.getElementById('editIndex').value = index;
+            document.getElementById('formTitle').innerText = "Editando Producto";
+            calculateVesPreview();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function deleteProduct(index) {
+            products.splice(index, 1);
+            localStorage.setItem('negocio_productos', JSON.stringify(products));
+            renderProducts();
+            showToast('Producto eliminado');
+        }
+
+        // --- PORTAPAPELES ---
+        function copyProductDetails(name, divisa, ves, label, symbol) {
+            const text = `🛍️ *${name}*\n💰 Precio: ${symbol}${divisa.toFixed(2)} (${label})\n🇻🇪 Bolívares: ${ves.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs`;
+            
+            if (navigator.share && /mobile/i.test(navigator.userAgent)) {
+                navigator.share({ title: name, text: text }).catch(() => copyToClipboard(text, 'Copiado'));
+            } else {
+                copyToClipboard(text, 'Información copiada');
+            }
+        }
+
+        function copyToClipboard(text, msg) {
+            if(!text) return;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showToast(msg)).catch(() => copyFallback(text, msg));
+            } else {
+                copyFallback(text, msg);
+            }
+        }
+
+        function copyFallback(text, msg) {
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                textArea.remove();
+                showToast(msg);
+            } catch (err) {
+                console.error("Fallo al copiar", err);
+            }
+        }
+
+        // --- PERFILES DE PAGO ---
+        function addPaymentProfile(e) {
+            e.preventDefault();
+            const bank = document.getElementById('newBank').value.trim();
+            const phone = document.getElementById('newPhone').value.trim();
+            const id = document.getElementById('newId').value.trim();
+
+            if(!bank || !phone || !id) return;
+
+            paymentProfiles.push({ id_profile: Date.now(), bank, phone, id });
+            localStorage.setItem('negocio_perfiles_pago', JSON.stringify(paymentProfiles));
+            
+            e.target.reset();
+            renderPaymentProfiles();
+            showToast('Perfil guardado');
+        }
+
+        function renderPaymentProfiles() {
+            const list = document.getElementById('paymentProfilesList');
+            if(!list) return;
+            
+            list.innerHTML = '';
+
+            if(paymentProfiles.length === 0) {
+                list.innerHTML = `<p class="text-xs text-gray-400 text-center py-2">No tienes perfiles guardados.</p>`;
+                return;
+            }
+
+            paymentProfiles.forEach((profile, index) => {
+                const item = document.createElement('div');
+                item.className = "bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
+                item.innerHTML = `
+                    <div class="text-xs">
+                        <strong class="text-brandYellow block text-sm mb-1">${escapeHtml(profile.bank)}</strong>
+                        <span class="text-gray-600 dark:text-gray-300">📱 ${escapeHtml(profile.phone)}</span> <br class="sm:hidden"> 
+                        <span class="hidden sm:inline text-gray-400">|</span> 
+                        <span class="text-gray-600 dark:text-gray-300">🆔 ${escapeHtml(profile.id)}</span>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <button onclick="copyProfile(${index})" class="flex-1 sm:flex-none p-2 bg-brandBlue text-white hover:bg-blue-700 rounded-lg transition text-xs font-bold"><i class="fa-solid fa-share"></i> Compartir</button>
+                        <button onclick="deleteProfile(${index})" class="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-red-500 hover:text-white rounded-lg transition text-gray-600 dark:text-gray-300"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function copyProfile(index) {
+            const p = paymentProfiles[index];
+            if(!p) return;
+            const text = `📲 *Datos de Pago Móvil*\n🏦 Banco: ${p.bank}\n📱 Teléfono: ${p.phone}\n🆔 Cédula/RIF: ${p.id}`;
+            
+            if (navigator.share && /mobile/i.test(navigator.userAgent)) {
+                navigator.share({ title: 'Pago Móvil', text: text }).catch(() => copyToClipboard(text, 'Copiado'));
+            } else {
+                copyToClipboard(text, 'Pago móvil copiado');
+            }
+        }
+
+        function deleteProfile(index) {
+            paymentProfiles.splice(index, 1);
+            localStorage.setItem('negocio_perfiles_pago', JSON.stringify(paymentProfiles));
+            renderPaymentProfiles();
+        }
+
+        // --- CALCULADORA ---
+        let calcExpr = "";
+        function calcAppend(val) {
+            calcExpr += val;
+            updateCalcLive();
+        }
+
+        function calcClear() {
+            calcExpr = "";
+            document.getElementById('calcExpression').innerText = "0";
+            document.getElementById('calcDisplay').innerText = "0";
+        }
+
+        function calcBackspace() {
+            calcExpr = calcExpr.slice(0, -1);
+            updateCalcLive();
+        }
+
+        function updateCalcLive() {
+            const expEl = document.getElementById('calcExpression');
+            const dispEl = document.getElementById('calcDisplay');
+            if(!expEl || !dispEl) return;
+
+            expEl.innerText = calcExpr || "0";
+            if(!calcExpr) { dispEl.innerText = "0"; return; }
+
+            try {
+                let expression = calcExpr;
+                let result = "";
+                if(expression.includes('+') && expression.includes('%')) {
+                    const parts = expression.split('+');
+                    const base = parseFloat(parts[0]) || 0;
+                    const pct = parseFloat(parts[1]) || 0;
+                    result = (base + (base * (pct / 100))).toString();
+                } else if(expression.includes('-') && expression.includes('%')) {
+                    const parts = expression.split('-');
+                    const base = parseFloat(parts[0]) || 0;
+                    const pct = parseFloat(parts[1]) || 0;
+                    result = (base - (base * (pct / 100))).toString();
+                } else {
+                    let sanitized = expression.replace(/×/g, '*').replace(/÷/g, '/');
+                    if(/[+\-*/.]$/.test(sanitized)) return; 
+                    result = eval(sanitized).toString();
+                }
+                
+                let numRes = parseFloat(result);
+                dispEl.innerText = isNaN(numRes) ? "Error" : (Number.isInteger(numRes) ? numRes : numRes.toFixed(2));
+            } catch (e) {}
+        }
+
+        function calcCalculate() {
+            try {
+                let expression = calcExpr;
+                if(expression.includes('+') && expression.includes('%')) {
+                    const parts = expression.split('+');
+                    const base = parseFloat(parts[0]) || 0;
+                    const pct = parseFloat(parts[1]) || 0;
+                    calcExpr = (base + (base * (pct / 100))).toString();
+                } else if(expression.includes('-') && expression.includes('%')) {
+                    const parts = expression.split('-');
+                    const base = parseFloat(parts[0]) || 0;
+                    const pct = parseFloat(parts[1]) || 0;
+                    calcExpr = (base - (base * (pct / 100))).toString();
+                } else {
+                    let sanitized = expression.replace(/×/g, '*').replace(/÷/g, '/');
+                    calcExpr = eval(sanitized).toString();
+                }
+                
+                let finalNum = parseFloat(calcExpr);
+                calcExpr = Number.isInteger(finalNum) ? finalNum.toString() : finalNum.toFixed(2);
+                
+                document.getElementById('calcExpression').innerText = calcExpr;
+                document.getElementById('calcDisplay').innerText = calcExpr;
+            } catch (e) {
+                document.getElementById('calcDisplay').innerText = "Error";
+                calcExpr = "";
+            }
+        }
+
+        // --- CONFIGURACIÓN Y COPIA DE SEGURIDAD ---
+        function setFontSize(size) {
+            currentFontSize = size;
+            localStorage.setItem('negocio_font', size);
+            applyFontSize(size);
+        }
+
+        function applyFontSize(size) {
+            const body = document.body;
+            body.classList.remove('font-small', 'font-medium', 'font-large');
+            
+            const btnSmall = document.getElementById('btnSmall');
+            const btnMedium = document.getElementById('btnMedium');
+            const btnLarge = document.getElementById('btnLarge');
+
+            if(btnSmall && btnMedium && btnLarge) {
+                const baseClass = "p-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 font-medium";
+                const activeClass = "p-2 bg-brandBlue text-white rounded-lg font-bold border-brandBlue shadow";
+                
+                btnSmall.className = baseClass;
+                btnMedium.className = baseClass;
+                btnLarge.className = baseClass;
+
+                if(size === 'small') { body.classList.add('font-small'); btnSmall.className = activeClass; }
+                else if(size === 'medium') { body.classList.add('font-medium'); btnMedium.className = activeClass; }
+                else { body.classList.add('font-large'); btnLarge.className = activeClass; }
+            } else {
+                body.classList.add(`font-${size}`);
+            }
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function exportBackup() {
+            const backupData = {
+                version: "1.0",
+                timestamp: new Date().toISOString(),
+                productos: JSON.parse(localStorage.getItem('negocio_productos') || '[]'),
+                perfiles_pago: JSON.parse(localStorage.getItem('negocio_perfiles_pago') || '[]'),
+                font: localStorage.getItem('negocio_font') || 'large',
+                cached_bcv: localStorage.getItem('cached_bcv'),
+                cached_eur: localStorage.getItem('cached_eur'),
+                cached_usdt: localStorage.getItem('cached_usdt'),
+                app_is_pro: localStorage.getItem('app_is_pro'),
+                app_install_date: localStorage.getItem('app_install_date')
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `respaldo_negocio_al_cambio_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Copia de seguridad descargada');
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.productos) localStorage.setItem('negocio_productos', JSON.stringify(data.productos));
+                    if (data.perfiles_pago) localStorage.setItem('negocio_perfiles_pago', JSON.stringify(data.perfiles_pago));
+                    if (data.font) localStorage.setItem('negocio_font', data.font);
+                    if (data.cached_bcv) localStorage.setItem('cached_bcv', data.cached_bcv);
+                    if (data.cached_eur) localStorage.setItem('cached_eur', data.cached_eur);
+                    if (data.cached_usdt) localStorage.setItem('cached_usdt', data.cached_usdt);
+                    if (data.app_is_pro) localStorage.setItem('app_is_pro', data.app_is_pro);
+                    if (data.app_install_date) localStorage.setItem('app_install_date', data.app_install_date);
+
+                    // Recargar variables de memoria
+                    products = JSON.parse(localStorage.getItem('negocio_productos')) || [];
+                    paymentProfiles = JSON.parse(localStorage.getItem('negocio_perfiles_pago')) || [];
+                    currentFontSize = localStorage.getItem('negocio_font') || 'large';
+
+                    applyFontSize(currentFontSize);
+                    renderProducts();
+                    renderPaymentProfiles();
+                    showToast('¡Datos restaurados con éxito!');
+                    
+                    event.target.value = '';
+                } catch (err) {
+                    alert('El archivo de copia de seguridad no es válido o está dañado.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+    </script>
+</body>
+</html>
